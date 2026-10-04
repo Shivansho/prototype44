@@ -25,6 +25,13 @@ function TrackingContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Citizen Confirmation & Reopen Loop State (Sections 26 - 28)
+  const [citizenConfirmed, setCitizenConfirmed] = useState<"RESOLVED" | "REOPENED" | null>(null);
+  const [showReopenInput, setShowReopenInput] = useState(false);
+  const [reopenText, setReopenText] = useState("");
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [communityEffect, setCommunityEffect] = useState<any>(null);
+
   const fetchTracking = async (id: string) => {
     if (!id.trim()) return;
     setLoading(true);
@@ -41,6 +48,38 @@ function TrackingContent() {
       setTrackingData(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCitizenConfirmation = async (isResolved: boolean) => {
+    setFeedbackLoading(true);
+    try {
+      let token = typeof window !== "undefined" ? localStorage.getItem("aegis_citizen_token") : null;
+      if (!token) {
+        token = `citizen-tok-${Math.random().toString(36).slice(2, 10)}`;
+        if (typeof window !== "undefined") localStorage.setItem("aegis_citizen_token", token);
+      }
+
+      const res = await fetch("http://localhost:8000/api/v1/citizen/incidents/INC-R17-GRID-01/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          citizen_token: token,
+          is_resolved: isResolved,
+          reopen_reason: !isResolved ? reopenText || "Citizen reported problem persists" : null,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCitizenConfirmed(isResolved ? "RESOLVED" : "REOPENED");
+        setCommunityEffect(data.community_status);
+        setShowReopenInput(false);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setFeedbackLoading(false);
     }
   };
 
@@ -279,6 +318,142 @@ function TrackingContent() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* SECTION 26 - 28: RESPONSE UPDATE & CITIZEN CONFIRMATION LOOP */}
+            <div className="p-6 rounded-xl border border-cyan-500/40 bg-gradient-to-br from-surface-card to-emerald-950/20 backdrop-blur-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-surface-border">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                    RESPONSE UPDATE & CITIZEN CONFIRMATION LOOP
+                  </h3>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                  CLOSING THE OPERATIONAL LOOP
+                </span>
+              </div>
+
+              {/* Progress Milestones: Reached, Completed, Verified */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs font-mono">
+                <div className="p-3 rounded-lg bg-emerald-950/30 border border-emerald-700/60 text-emerald-200 flex items-center gap-2">
+                  <span className="text-emerald-400 font-bold">✓</span>
+                  <span>Response team reached the location</span>
+                </div>
+                <div className="p-3 rounded-lg bg-emerald-950/30 border border-emerald-700/60 text-emerald-200 flex items-center gap-2">
+                  <span className="text-emerald-400 font-bold">✓</span>
+                  <span>On-site work completed</span>
+                </div>
+                <div className="p-3 rounded-lg bg-emerald-950/30 border border-emerald-700/60 text-emerald-200 flex items-center gap-2">
+                  <span className="text-emerald-400 font-bold">✓</span>
+                  <span>Authority verification confirmed</span>
+                </div>
+              </div>
+
+              {/* Status Header */}
+              <div className="p-3.5 rounded-lg bg-slate-900 border border-emerald-600/50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-emerald-400" />
+                  <span className="text-xs font-mono font-bold text-white uppercase">
+                    ISSUE MARKED RESOLVED
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-400 font-mono">
+                  Municipal authority has verified physical restoration
+                </span>
+              </div>
+
+              {/* Citizen Confirmation Buttons */}
+              {citizenConfirmed === null && (
+                <div className="p-4 rounded-xl bg-slate-950/70 border border-cyan-900/60 space-y-3">
+                  <div className="text-center sm:text-left">
+                    <span className="text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider block">
+                      DID THIS FIX THE PROBLEM?
+                    </span>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Your feedback closes the operational loop. If the hazard persists, you can request an immediate reopen.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleCitizenConfirmation(true)}
+                      disabled={feedbackLoading}
+                      className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white text-xs font-black tracking-wider transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>✓</span>
+                      <span>YES, RESOLVED</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowReopenInput(!showReopenInput)}
+                      disabled={feedbackLoading}
+                      className="px-4 py-2.5 rounded-lg bg-rose-950/50 border border-rose-800 hover:bg-rose-900/60 text-rose-300 text-xs font-bold tracking-wider transition-colors flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>✕</span>
+                      <span>STILL NOT FIXED</span>
+                    </button>
+                  </div>
+
+                  {/* Reopen Input Drawer (Section 27) */}
+                  {showReopenInput && (
+                    <div className="p-3.5 rounded-lg bg-slate-900 border border-rose-800/80 space-y-2.5 animate-in fade-in duration-200">
+                      <span className="text-[11px] font-mono text-rose-300 font-bold uppercase block">
+                        Tell us what is still wrong:
+                      </span>
+                      <textarea
+                        value={reopenText}
+                        onChange={(e) => setReopenText(e.target.value)}
+                        placeholder="Describe unresolved condition, remaining obstruction, persistent voltage flicker, etc..."
+                        rows={2}
+                        className="w-full rounded-md bg-slate-950 border border-slate-700 p-2 text-xs text-slate-200 font-sans outline-none focus:border-rose-500"
+                      />
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          Linked to INC-7712 (will flag as REOPENED)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCitizenConfirmation(false)}
+                          disabled={feedbackLoading}
+                          className="px-3.5 py-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-colors shadow-sm"
+                        >
+                          SUBMIT REOPEN REQUEST
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Citizen Confirmed State (Section 28) */}
+              {citizenConfirmed === "RESOLVED" && (
+                <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-600 text-xs font-mono space-y-2">
+                  <div className="flex items-center justify-between text-emerald-300 font-bold">
+                    <span>✓ THANK YOU! YOUR CONFIRMATION HAS BEEN RECORDED</span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-900/80 border border-emerald-700 text-emerald-200 text-[10px]">
+                      LOOP CLOSED
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300">
+                    {communityEffect?.summary ||
+                      "14 citizens reported the issue. Resolution verified. 10 citizens confirmed resolution. 2 reports remain open."}
+                  </p>
+                </div>
+              )}
+
+              {citizenConfirmed === "REOPENED" && (
+                <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-600 text-xs font-mono space-y-1">
+                  <div className="text-rose-300 font-bold">
+                    ⚠ REOPEN REQUEST SUBMITTED — INC-7712 REOPENED
+                  </div>
+                  <p className="text-[11px] text-slate-300">
+                    Your observation has been appended to the operational incident. Field Operations has been alerted for secondary inspection.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Direct Action Link */}

@@ -23,6 +23,7 @@ from app.routes.response import router as response_router
 from app.routes.citizen import router as citizen_router
 from app.routes.voice import router as voice_router
 from app.routes.scenarios import router as scenarios_router
+from app.routes.field import router as field_router
 from app.services.job_worker import job_worker
 
 
@@ -112,6 +113,7 @@ app.include_router(impact_router, prefix=settings.API_V1_STR)
 app.include_router(simulation_router, prefix=settings.API_V1_STR)
 app.include_router(response_router, prefix=settings.API_V1_STR)
 app.include_router(citizen_router, prefix=settings.API_V1_STR)
+app.include_router(field_router, prefix=settings.API_V1_STR)
 app.include_router(voice_router, prefix=settings.API_V1_STR)
 app.include_router(scenarios_router, prefix=settings.API_V1_STR)
 app.include_router(ws_router)

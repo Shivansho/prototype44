@@ -53,6 +53,67 @@ export default function ReportPage() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Community Corroboration & Nearby Activity State
+  const [nearbyData, setNearbyData] = useState<any>(null);
+  const [corroboratedReports, setCorroboratedReports] = useState<Record<string, boolean>>({});
+  const [corroborateLoading, setCorroborateLoading] = useState<string | null>(null);
+  const [corroborateFeedback, setCorroborateFeedback] = useState<string | null>(null);
+
+  const fetchNearby = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/citizen/nearby-reports");
+      if (res.ok) {
+        const data = await res.json();
+        setNearbyData(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchNearby();
+    const interval = setInterval(fetchNearby, 6000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleCorroborate = async (reportId: string) => {
+    if (corroboratedReports[reportId]) return;
+    setCorroborateLoading(reportId);
+    setCorroborateFeedback(null);
+    try {
+      let token = typeof window !== "undefined" ? localStorage.getItem("aegis_citizen_token") : null;
+      if (!token) {
+        token = `citizen-tok-${Math.random().toString(36).slice(2, 10)}`;
+        if (typeof window !== "undefined") localStorage.setItem("aegis_citizen_token", token);
+      }
+
+      const res = await fetch(`http://localhost:8000/api/v1/citizen/reports/${reportId}/corroborate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          citizen_token: token,
+          latitude,
+          longitude,
+          comment: "Corroborated: Experiencing identical problem at this location.",
+        }),
+      });
+
+      if (res.ok) {
+        setCorroboratedReports((prev) => ({ ...prev, [reportId]: true }));
+        setCorroborateFeedback("Your location and report now corroborate this issue.");
+        await fetchNearby();
+      } else if (res.status === 409) {
+        setCorroboratedReports((prev) => ({ ...prev, [reportId]: true }));
+        setCorroborateFeedback("You have already corroborated this report.");
+      }
+    } catch (err: any) {
+      setCorroborateFeedback(err.message || "Failed to corroborate report");
+    } finally {
+      setCorroborateLoading(null);
+    }
+  };
+
   // Clean up object preview urls
   useEffect(() => {
     return () => {
@@ -391,6 +452,220 @@ export default function ReportPage() {
               >
                 ⚡ Hospital Generator
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 8: NEARBY ACTIVITY & COMMUNITY SIGNAL (Section 2 - 8) */}
+        <div className="mb-8 rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-cyan-950/20 backdrop-blur-md p-6 shadow-2xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-cyan-950/90 border border-cyan-500/60 flex items-center justify-center text-cyan-400 text-lg shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                📡
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-extrabold tracking-wider text-white mono-telemetry uppercase">
+                    NEARBY ACTIVITY
+                  </h2>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 border border-cyan-700/60 text-cyan-300 font-bold">
+                    COMMUNITY CORROBORATION
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  See when other citizens are observing related conditions in your immediate area.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/60 px-3 py-1.5 rounded-full">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>SPATIAL CLUSTER: 420m RADIUS</span>
+            </div>
+          </div>
+
+          {/* Feedback Banner if Corroborated */}
+          {corroborateFeedback && (
+            <div className="p-3.5 rounded-xl border border-emerald-500/60 bg-emerald-950/40 text-emerald-200 text-xs font-mono flex items-center justify-between animate-in fade-in duration-200">
+              <div className="flex items-center gap-2">
+                <span>✓</span>
+                <span>{corroborateFeedback}</span>
+              </div>
+              <span className="text-emerald-400 font-bold">13 Nearby Reports Corroborating</span>
+            </div>
+          )}
+
+          {/* 3-Row Civic Grid: YOUR REPORT | NEARBY REPORTS | COMMUNITY SIGNAL */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* 1. YOUR REPORT (4 cols) */}
+            <div className="lg:col-span-4 p-4 rounded-xl border border-slate-800 bg-slate-950/60 space-y-3 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+                  YOUR OBSERVATION
+                </span>
+                <h3 className="text-sm font-bold text-white">Power Outage & Grid Surge</h3>
+                <div className="text-xs text-cyan-400 font-mono mt-1">Sector 17 — North Substation Feeder</div>
+                <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                  {textContent || "Transformer arching observed, residential feeder tripped."}
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                <span className="text-[10px] font-mono text-slate-500">STATUS:</span>
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-amber-950/80 border border-amber-800 text-amber-300">
+                  UNDER REVIEW
+                </span>
+              </div>
+            </div>
+
+            {/* 2. NEARBY REPORTS (8 cols) */}
+            <div className="lg:col-span-8 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                  NEARBY CITIZEN REPORTS ({nearbyData?.nearby_reports?.length || 3} ACTIVE)
+                </span>
+                <span className="text-[10px] font-mono text-slate-500">Privacy Protected: No citizen names exposed</span>
+              </div>
+
+              <div className="space-y-2.5">
+                {(nearbyData?.nearby_reports || [
+                  {
+                    report_id: "RPT-R17-001",
+                    title: "Power Outage & Grid Surge",
+                    distance_m: 250,
+                    reported_time: "4 min ago",
+                    corroborated_count: 12,
+                    status: "UNDER REVIEW",
+                  },
+                  {
+                    report_id: "RPT-R17-002",
+                    title: "Substation Warning Siren & Sparking",
+                    distance_m: 310,
+                    reported_time: "6 min ago",
+                    corroborated_count: 8,
+                    status: "UNDER REVIEW",
+                  },
+                  {
+                    report_id: "RPT-R17-003",
+                    title: "Traffic Signal Inoperative at Crossroad",
+                    distance_m: 180,
+                    reported_time: "7 min ago",
+                    corroborated_count: 5,
+                    status: "ASSIGNED",
+                  },
+                ]).map((rep: any) => {
+                  const isCorroborated = corroboratedReports[rep.report_id];
+                  const isLoading = corroborateLoading === rep.report_id;
+                  const displayCount = isCorroborated ? rep.corroborated_count + 1 : rep.corroborated_count;
+
+                  return (
+                    <div
+                      key={rep.report_id}
+                      className="p-3.5 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-950/70 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-white">{rep.title}</span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-950 border border-cyan-800 text-cyan-300">
+                            {rep.distance_m}m away
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-mono flex items-center gap-2">
+                          <span>Reported {rep.reported_time}</span>
+                          <span>•</span>
+                          <span className="text-amber-300 font-semibold">
+                            {displayCount} nearby citizens reported this
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Corroboration Actions */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Link
+                          href={`/track?id=${rep.report_id}`}
+                          className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono transition-colors"
+                        >
+                          View Report
+                        </Link>
+
+                        <button
+                          type="button"
+                          onClick={() => handleCorroborate(rep.report_id)}
+                          disabled={isCorroborated || isLoading}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition-all flex items-center gap-1.5 ${
+                            isCorroborated
+                              ? "bg-emerald-950 border border-emerald-600 text-emerald-300 cursor-default"
+                              : "bg-cyan-600 hover:bg-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.3)] cursor-pointer"
+                          }`}
+                        >
+                          {isLoading ? (
+                            <span>Corroborating...</span>
+                          ) : isCorroborated ? (
+                            <>
+                              <span>✓</span>
+                              <span>CORROBORATED</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>⚡</span>
+                              <span>THIS IS HAPPENING HERE TOO</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* 3. COMMUNITY SIGNAL SUMMARY BANNER (Section 5 & 6) */}
+          <div className="p-4 rounded-xl border border-cyan-900/50 bg-cyan-950/20 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white font-mono uppercase tracking-wider">
+                  COMMUNITY SIGNAL
+                </span>
+                <span className="text-xs text-cyan-300 font-mono">
+                  13 nearby citizens report the same issue
+                </span>
+              </div>
+              <div className="text-[11px] font-mono text-slate-400">
+                Time window: <strong className="text-slate-200">10:14 AM – 10:21 AM</strong> • Cluster: <strong className="text-slate-200">420m radius</strong>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs font-mono">
+              <div className="p-2 rounded bg-slate-900/80 border border-slate-800">
+                <span className="text-slate-400 text-[10px] block">AGGREGATE REPORTS</span>
+                <strong className="text-white block mt-0.5">8 reports</strong>
+              </div>
+              <div className="p-2 rounded bg-slate-900/80 border border-slate-800">
+                <span className="text-slate-400 text-[10px] block">CITIZEN PHOTOS</span>
+                <strong className="text-cyan-300 block mt-0.5">8 photos</strong>
+              </div>
+              <div className="p-2 rounded bg-slate-900/80 border border-slate-800">
+                <span className="text-slate-400 text-[10px] block">CITIZEN VIDEOS</span>
+                <strong className="text-cyan-300 block mt-0.5">3 videos</strong>
+              </div>
+              <div className="p-2 rounded bg-slate-900/80 border border-slate-800">
+                <span className="text-slate-400 text-[10px] block">VOICE DISPATCHES</span>
+                <strong className="text-purple-300 block mt-0.5">2 audio notes</strong>
+              </div>
+            </div>
+
+            {/* Citizen-Safe Truthful Explanation (Section 6 & 7) */}
+            <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-300 leading-relaxed flex items-start gap-2">
+              <span className="text-cyan-400 mt-0.5">ℹ️</span>
+              <div>
+                <p>
+                  <strong>Why this matters:</strong> Multiple nearby reports may help AEGIS determine whether separate observations are describing the same real-world event.
+                </p>
+                <p className="text-slate-400 mt-0.5 text-[10px]">
+                  Notice: Corroboration is evidence. It is NOT operational truth. AEGIS combines citizen signals with municipal sensor telemetry before dispatching specialized response crews.
+                </p>
+              </div>
             </div>
           </div>
         </div>

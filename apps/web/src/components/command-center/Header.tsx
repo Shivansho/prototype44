@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   Sparkles,
   SlidersHorizontal,
+  Truck,
   User,
   Users,
   Zap,
@@ -85,7 +86,7 @@ export const Header: React.FC = () => {
   const isCommandCenter = pathname === "/world" || pathname === "/";
   const isIntelligence = pathname === "/intelligence";
   const isCitizen = pathname === "/report" || pathname === "/track";
-  const isFieldOps = pathname === "/review";
+  const isFieldOps = pathname === "/field" || pathname === "/review";
   const isArch = pathname === "/architecture";
 
   return (
@@ -133,14 +134,14 @@ export const Header: React.FC = () => {
             <span>Citizen Portal</span>
           </Link>
           <Link
-            href="/review"
+            href="/field"
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${
               isFieldOps
                 ? "bg-cyan-600/20 text-cyan-300 border border-cyan-500/30"
                 : "text-slate-400 hover:text-slate-200 hover:bg-surface-elevated"
             }`}
           >
-            <Scale className="w-3.5 h-3.5" />
+            <Truck className="w-3.5 h-3.5" />
             <span>Field Operations</span>
           </Link>
           <Link

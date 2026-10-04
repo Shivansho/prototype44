@@ -23,6 +23,7 @@ from app.models.organization import OrganizationModel, RoleModel, UserModel
 from app.models.world import AssetModel, SpatialEntityModel, WorldModel
 from app.models.response import ResponsePlanModel, ActionExecutionModel  # noqa: F401 Phase 5
 from app.models.simulation import SimulationScenarioModel  # noqa: F401 Phase 5
+from app.models.field import FieldAssignmentModel, ReportCorroborationModel, CitizenFeedbackModel  # noqa: F401 Closed Loop
 
 
 def parse_datetime(dt_str: str) -> datetime:

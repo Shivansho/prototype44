@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: "Live operational world model, spatial intelligence, and automated response orchestration.",
 };
 
+import { JudgeDemoController } from "@/components/command-center/JudgeDemoController";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,6 +31,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-space-950 text-slate-100 min-h-screen overflow-hidden">
         {children}
+        <JudgeDemoController />
       </body>
     </html>
   );
