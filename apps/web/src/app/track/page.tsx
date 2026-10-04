@@ -129,7 +129,7 @@ function TrackingContent() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-6 md:p-8 space-y-6">
+      <main className="flex-1 max-w-4xl w-full mx-auto p-6 md:p-8 pb-36 space-y-6">
         {/* Search / Lookup Bar */}
         <div className="p-4 rounded-xl border border-surface-border bg-surface-card/60 backdrop-blur-sm space-y-3">
           <div className="flex items-center justify-between">

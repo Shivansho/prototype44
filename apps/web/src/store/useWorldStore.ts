@@ -727,7 +727,21 @@ export const useWorldStore = create<WorldState>((set, get) => ({
         body: JSON.stringify({ query, actor: "Commander Vikram Malhotra" }),
       });
       if (res.ok) {
-        const data: VoiceCommandResult = await res.json();
+        const raw: any = await res.json();
+        const data: VoiceCommandResult = {
+          transcript: raw.transcript || raw.query || query,
+          intent: raw.intent || "QUERY_STATUS",
+          toolCalled: raw.toolCalled || raw.tool_called || "system",
+          spokenResponse: raw.spokenResponse || raw.spoken_response || "Command processed.",
+          clientAction: raw.clientAction || (raw.client_action ? {
+            action: raw.client_action.action,
+            targetId: raw.client_action.targetId || raw.client_action.target_id,
+            tab: raw.client_action.tab,
+            entityType: raw.client_action.entityType || raw.client_action.entity_type,
+            message: raw.client_action.message,
+          } : undefined),
+          data: raw.data,
+        };
         set({ voiceResult: data });
         // Handle client UI action triggers
         if (data.clientAction) {

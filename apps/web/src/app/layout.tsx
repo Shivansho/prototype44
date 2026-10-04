@@ -29,7 +29,7 @@ export default function RootLayout({
           href="https://cesium.com/downloads/cesiumjs/releases/1.121/Build/Cesium/Widgets/widgets.css"
         />
       </head>
-      <body className="antialiased bg-space-950 text-slate-100 min-h-screen overflow-hidden">
+      <body className="antialiased bg-space-950 text-slate-100 min-h-screen overflow-x-hidden overflow-y-auto">
         {children}
         <JudgeDemoController />
       </body>

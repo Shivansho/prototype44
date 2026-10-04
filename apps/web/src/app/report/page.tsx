@@ -415,7 +415,7 @@ export default function ReportPage() {
       </header>
 
       {/* Main Content Area */}
-      <main className="relative z-10 max-w-5xl mx-auto px-4 py-8">
+      <main className="relative z-10 max-w-5xl mx-auto px-4 py-8 pb-36">
         {/* Title & One-Click Hackathon Presets */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-800/60">

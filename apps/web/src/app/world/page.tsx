@@ -9,7 +9,6 @@ import { BottomBar } from "@/components/command-center/BottomBar";
 import { NexusViewer } from "@/components/spatial/NexusViewer";
 import { CommandBar } from "@/components/ui/CommandBar";
 import { VoiceAssistantModal } from "@/components/command-center/VoiceAssistantModal";
-import { DemoController } from "@/components/command-center/DemoController";
 
 export default function WorldPage() {
   const { fetchSnapshot } = useWorldStore();
@@ -31,8 +30,6 @@ export default function WorldPage() {
         {/* Center: 3D Cesium Spatial Canvas */}
         <section className="flex-1 relative overflow-hidden bg-space-950">
           <NexusViewer />
-          {/* Phase 6 Judge Mode & Demo Timeline Controller */}
-          <DemoController />
         </section>
 
         {/* Right Rail: Contextual Intelligence & Entity Telemetry */}

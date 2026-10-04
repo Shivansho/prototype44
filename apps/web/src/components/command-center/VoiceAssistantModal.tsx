@@ -24,6 +24,17 @@ interface SuggestedCommand {
   category: "INTEL" | "SPATIAL" | "SIMULATION" | "DISPATCH";
 }
 
+const PREDEFINED_VOICE_RESPONSES: Record<string, string> = {
+  "What is happening near R17?": "Active Critical Incident 1047 detected at Road R17 Corridor. Flash flooding with 38 centimeters of water submersion. Corroborated with 94 percent confidence across 4 multimodal sensor feeds.",
+  "Switch to Satellite view": "Switching spatial map layer to Satellite view.",
+  "Switch to 3D Living Twin": "Switching spatial operational layer to 3D Living Twin.",
+  "Switch to 2D Dark Map": "Switching map display to 2D Dark Tactical Map.",
+  "What is the critical impact?": "Operational impact analysis indicates Road R17 is severed. Central Memorial Hospital emergency ingress is delayed by 9 minutes, and Ambulance MED-102 requires immediate corridor rerouting.",
+  "Run What-If simulation for R17 flood": "Running What-If corridor closure simulation. Automated rerouting via Road R14 Northern Bypass saves 11.4 minutes with 7.1 minute arrival.",
+  "Generate authorized dispatch plan": "Response plan generated. High-water pump unit dispatched to Road R17 culvert. Field response team assigned.",
+  "Verify water clearance and resolve incident": "Verification passed. Autonomous drone telemetry confirms water level receded to 4 centimeters. Road R17 cleared and incident marked resolved.",
+};
+
 const PREDEFINED_VOICE_COMMANDS: SuggestedCommand[] = [
   { label: "What is happening near R17?", category: "INTEL" },
   { label: "Switch to Satellite view", category: "SPATIAL" },
@@ -50,9 +61,54 @@ export const VoiceAssistantModal: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState("");
 
   const recognitionRef = useRef<any>(null);
+
+  // Reliable Speech Synthesis function (Web Speech API)
+  const speakText = (text: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window) || isMuted) return;
+    try {
+      window.speechSynthesis.cancel();
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+      const clean = text
+        .replace(/#/g, "Incident ")
+        .replace(/(\d+)cm/gi, "$1 centimeters")
+        .replace(/R17/gi, "Road R 17")
+        .replace(/R14/gi, "Road R 14");
+      const utterance = new SpeechSynthesisUtterance(clean);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      utterance.lang = "en-US";
+
+      const voices = window.speechSynthesis.getVoices();
+      if (voices && voices.length > 0) {
+        const preferred = voices.find(
+          (v) =>
+            v.lang.startsWith("en") &&
+            (v.name.includes("Natural") ||
+              v.name.includes("Google") ||
+              v.name.includes("Samantha") ||
+              v.name.includes("David") ||
+              v.name.includes("Aria"))
+        ) || voices.find((v) => v.lang.startsWith("en")) || voices[0];
+        if (preferred) utterance.voice = preferred;
+      }
+
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.warn("Speech synthesis error:", err);
+      setIsSpeaking(false);
+    }
+  };
 
   // Initialize Speech Recognition if supported
   useEffect(() => {
@@ -85,22 +141,31 @@ export const VoiceAssistantModal: React.FC = () => {
     }
   }, []);
 
-  // Speak out voice responses using Web Speech Synthesis API
+  // Speak out voice responses whenever voiceResult updates
   useEffect(() => {
     if (voiceResult?.spokenResponse && !isMuted && typeof window !== "undefined") {
-      try {
-        window.speechSynthesis.cancel(); // Stop prior audio
-        const utterance = new SpeechSynthesisUtterance(voiceResult.spokenResponse);
-        utterance.rate = 1.05;
-        utterance.pitch = 1.0;
-        window.speechSynthesis.speak(utterance);
-      } catch (err) {
-        // Speech synthesis gracefully silenced if blocked by browser policy
-      }
+      speakText(voiceResult.spokenResponse);
     }
   }, [voiceResult, isMuted]);
 
-  if (!isVoiceModalOpen) return null;
+  if (!isVoiceModalOpen) {
+    return (
+      <div className="fixed bottom-12 right-5 z-40 animate-in fade-in zoom-in duration-300">
+        <button
+          onClick={() => toggleVoiceModal(true)}
+          title="Open Voice Command Center (Speech & Audio Tools)"
+          className="group flex items-center gap-2 px-3.5 py-2 rounded-full bg-cyan-950/95 border-2 border-cyan-400 hover:border-cyan-300 text-cyan-200 hover:text-white text-xs font-bold font-mono tracking-wider shadow-[0_0_20px_rgba(6,182,212,0.5)] hover:shadow-[0_0_30px_rgba(6,182,212,0.8)] backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+        >
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400"></span>
+          </span>
+          <Mic className="w-4 h-4 text-cyan-300 group-hover:scale-110 transition-transform" />
+          <span>VOICE OPS</span>
+        </button>
+      </div>
+    );
+  }
 
   const handleSubmit = async (queryText: string) => {
     if (!queryText.trim() || isProcessing) return;
@@ -123,8 +188,17 @@ export const VoiceAssistantModal: React.FC = () => {
       setMapDisplayMode("2D_DARK");
     }
 
+    // Immediate speech if canned prompt
+    const cannedResponse = PREDEFINED_VOICE_RESPONSES[queryText];
+    if (cannedResponse) {
+      speakText(cannedResponse);
+    }
+
     try {
-      await sendVoiceCommand(queryText);
+      const res = await sendVoiceCommand(queryText);
+      if (res?.spokenResponse && !cannedResponse) {
+        speakText(res.spokenResponse);
+      }
       setInputQuery("");
     } finally {
       setIsProcessing(false);
@@ -133,10 +207,11 @@ export const VoiceAssistantModal: React.FC = () => {
 
   const handleSimulateVoice = (promptText: string) => {
     setInputQuery(promptText);
-    setIsListening(true);
-    setTimeout(() => {
-      handleSubmit(promptText);
-    }, 900);
+    const canned = PREDEFINED_VOICE_RESPONSES[promptText];
+    if (canned) {
+      speakText(canned);
+    }
+    handleSubmit(promptText);
   };
 
   const toggleMic = () => {
@@ -190,6 +265,18 @@ export const VoiceAssistantModal: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (isMuted) setIsMuted(false);
+                speakText("AEGIS Living Intelligence Voice System is active and operational.");
+              }}
+              title="Test Voice Speech Output"
+              className="px-2.5 py-1 rounded-lg bg-cyan-950/70 border border-cyan-500/40 hover:border-cyan-400 text-cyan-300 text-[11px] font-mono font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+            >
+              <Volume2 className={`w-3.5 h-3.5 ${isSpeaking ? "text-cyan-400 animate-pulse" : "text-cyan-300"}`} />
+              <span>{isSpeaking ? "Speaking..." : "Test Voice"}</span>
+            </button>
+
             <button
               onClick={() => {
                 if (!isMuted) window.speechSynthesis?.cancel();

@@ -17,6 +17,13 @@ from app.services.response_service import response_service
 
 
 class VoiceCommandService:
+    @staticmethod
+    def _format_res(res: Dict[str, Any]) -> Dict[str, Any]:
+        res["spokenResponse"] = res.get("spoken_response", "")
+        res["toolCalled"] = res.get("tool_called", "")
+        res["clientAction"] = res.get("client_action")
+        return res
+
     async def process_command(
         self,
         text_query: str,
@@ -24,6 +31,15 @@ class VoiceCommandService:
         db: Optional[AsyncSession] = None
     ) -> Dict[str, Any]:
         """Parses natural language query and dispatches to appropriate operational tool."""
+        res = await self._dispatch_command(text_query, actor, db)
+        return self._format_res(res)
+
+    async def _dispatch_command(
+        self,
+        text_query: str,
+        actor: str = "Commander Vikram Malhotra",
+        db: Optional[AsyncSession] = None
+    ) -> Dict[str, Any]:
         q = text_query.strip().lower()
 
         # 1. Incident status query: "What is happening near R17?" / "Status of incident"
@@ -139,8 +155,7 @@ class VoiceCommandService:
                 "data": verif_data
             }
 
-        # Default help / generic tool
-        return {
+        res = {
             "transcript": text_query,
             "intent": "GENERAL_COMMAND",
             "tool_called": "general_voice_assistant",
@@ -152,5 +167,12 @@ class VoiceCommandService:
             "data": {"status": "ACKNOWLEDGED"}
         }
 
+        # Add camelCase aliases for all responses
+        res["spokenResponse"] = res.get("spoken_response", "")
+        res["toolCalled"] = res.get("tool_called", "")
+        res["clientAction"] = res.get("client_action")
+        return res
+
 
 voice_service = VoiceCommandService()
+

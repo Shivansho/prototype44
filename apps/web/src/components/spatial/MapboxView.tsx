@@ -449,17 +449,17 @@ export const MapboxView: React.FC = () => {
           </button>
         </div>
 
-        {/* Center: Search Box */}
+        {/* Center: Search Box (only visible on ultra-wide screens to prevent crushing on standard laptops) */}
         <form
           onSubmit={handleSearch}
-          className="pointer-events-auto flex-1 max-w-md relative hidden md:block"
+          className="pointer-events-auto flex-1 max-w-xs relative hidden 2xl:block"
         >
           <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search location, ward, or incident ID (e.g. R17, Memorial Hospital)..."
+            placeholder="Search location (R17)..."
             className="w-full pl-9 pr-4 py-2 rounded-lg bg-surface-base/90 border border-surface-border text-xs font-mono text-slate-200 placeholder:text-slate-500 backdrop-blur-md focus:outline-none focus:border-blue-500 shadow-lg transition-colors"
           />
         </form>

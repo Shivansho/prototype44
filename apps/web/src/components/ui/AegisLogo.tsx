@@ -54,17 +54,17 @@ export const AegisLogo: React.FC<AegisLogoProps> = ({ size = "md", showSubtitle 
       </div>
 
       {/* Typography */}
-      <div>
-        <div className="flex items-center gap-1.5 leading-none">
+      <div className="flex flex-col justify-center py-0.5">
+        <div className="flex items-center gap-1.5 leading-tight">
           <span className={`font-black tracking-widest text-slate-100 mono-telemetry ${titleSize}`}>
             AEGIS
           </span>
-          <span className="text-[9px] text-cyan-400 font-bold px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/80 mono-telemetry">
+          <span className="text-[8.5px] text-cyan-400 font-bold px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/80 mono-telemetry">
             OPERATIONAL TWIN
           </span>
         </div>
         {showSubtitle && (
-          <p className="text-[9px] text-slate-400 leading-none mt-1 font-mono tracking-tight">
+          <p className="text-[9px] text-slate-400 font-mono tracking-tight leading-tight mt-0.5">
             Living Intelligence Layer
           </p>
         )}

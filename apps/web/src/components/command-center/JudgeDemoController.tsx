@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useWorldStore } from "@/store/useWorldStore";
 import {
   AlertTriangle,
   ArrowRight,
@@ -19,6 +20,8 @@ import {
   Truck,
   User,
   Zap,
+  X,
+  Mic,
 } from "lucide-react";
 
 const DEMO_EVENTS = [
@@ -47,11 +50,13 @@ const DEMO_EVENTS = [
 export const JudgeDemoController: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const { isJudgeBriefingOpen, toggleJudgeBriefing, toggleVoiceModal } = useWorldStore();
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const [isMinimized, setIsMinimized] = useState<boolean>(false);
+  const [isMinimized, setIsMinimized] = useState<boolean>(true);
+  const [isOpen, setIsOpen] = useState<boolean>(true);
   const [showHeroMessage, setShowHeroMessage] = useState<boolean>(false);
   const autoPlayTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -129,30 +134,68 @@ export const JudgeDemoController: React.FC = () => {
 
   return (
     <>
-      {/* Floating Compact Judge Controller Dock */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-4xl w-[94vw] sm:w-auto">
-        <div className="p-3 sm:p-4 rounded-2xl border border-amber-500/50 bg-slate-950/95 backdrop-blur-md shadow-[0_0_25px_rgba(245,158,11,0.25)] space-y-2.5">
-          {/* Top Bar: Judge Tag & Step Counter */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-              <span className="text-xs font-mono font-bold text-amber-300 uppercase tracking-wider">
-                JUDGE MODE • DEMO SCENARIO
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/80 border border-amber-800 text-amber-200 font-bold">
-                STEP {currentStep} OF 20
-              </span>
-            </div>
+      {/* Subtle toggle pill when dock is closed (docked bottom-left to leave bottom-right clear for Voice) */}
+      {!isOpen && (
+        <div className="fixed bottom-11 left-6 z-40 animate-in fade-in slide-in-from-bottom-2">
+          <button
+            onClick={() => setIsOpen(true)}
+            className="px-3 py-1.5 rounded-full bg-amber-950/90 border border-amber-500/60 hover:border-amber-400 text-amber-300 text-xs font-mono font-bold flex items-center gap-1.5 shadow-[0_0_15px_rgba(245,158,11,0.35)] backdrop-blur transition-all"
+            title="Open Judge 20-Step Controller"
+          >
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span>Judge Mode (Step {currentStep}/20)</span>
+          </button>
+        </div>
+      )}
 
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setIsMinimized(!isMinimized)}
-                className="text-[11px] font-mono text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-900 border border-slate-800"
-              >
-                {isMinimized ? "Expand Dock" : "Minimize"}
-              </button>
+      {/* Floating Compact Judge Controller Dock (docked cleanly above BottomBar) */}
+      {isOpen && (
+        <div className="fixed bottom-10 sm:bottom-11 left-1/2 -translate-x-1/2 z-50 max-w-4xl w-[94vw] sm:w-auto animate-in fade-in duration-200">
+          <div className="p-3 sm:p-4 rounded-2xl border border-amber-500/50 bg-slate-950/95 backdrop-blur-md shadow-[0_0_25px_rgba(245,158,11,0.25)] space-y-2.5">
+            {/* Top Bar: Judge Tag & Step Counter */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-xs font-mono font-bold text-amber-300 uppercase tracking-wider">
+                  JUDGE MODE • DEMO SCENARIO
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/80 border border-amber-800 text-amber-200 font-bold">
+                  STEP {currentStep} OF 20
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => toggleVoiceModal(true)}
+                  className="text-[11px] font-mono text-cyan-300 hover:text-white px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/50 hover:border-cyan-400 transition-colors flex items-center gap-1"
+                  title="Open Voice Command Center"
+                >
+                  <Mic className="w-3 h-3 text-cyan-400" />
+                  <span>Voice</span>
+                </button>
+                <button
+                  onClick={() => toggleJudgeBriefing(true)}
+                  className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-800 transition-colors flex items-center gap-1"
+                  title="View 7-Question Judge Briefing Card"
+                >
+                  <Sparkles className="w-3 h-3 text-cyan-400" />
+                  <span>Judge Q&A</span>
+                </button>
+                <button
+                  onClick={() => setIsMinimized(!isMinimized)}
+                  className="text-[11px] font-mono text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-900 border border-slate-800"
+                >
+                  {isMinimized ? "Expand Dock" : "Minimize"}
+                </button>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  title="Hide Judge Dock (click badge to reopen)"
+                  className="p-1 rounded text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-          </div>
 
           {!isMinimized && (
             <>
@@ -248,8 +291,9 @@ export const JudgeDemoController: React.FC = () => {
               </div>
             </>
           )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* HERO MESSAGE MODAL (Section 48) */}
       {showHeroMessage && (
@@ -312,6 +356,119 @@ export const JudgeDemoController: React.FC = () => {
                 className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs font-mono transition-colors"
               >
                 REPLAY DEMO
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7-QUESTION JUDGE BRIEFING CARD MODAL */}
+      {isJudgeBriefingOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-full max-w-2xl rounded-2xl border border-cyan-500/50 bg-slate-900/95 shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-slate-800 bg-slate-950/70 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+                <h2 className="text-sm font-bold font-mono text-slate-100 uppercase tracking-wider">
+                  AEGIS / NEXUS Operational Judge Briefing (7 Core Answers)
+                </h2>
+              </div>
+              <button
+                onClick={() => toggleJudgeBriefing(false)}
+                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Content: 7 Core Questions */}
+            <div className="p-6 space-y-3.5 max-h-[72vh] overflow-y-auto text-xs leading-relaxed">
+              <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 space-y-1">
+                <span className="font-bold font-mono text-cyan-400 block uppercase tracking-wider text-[11px]">
+                  1. WHAT HAPPENED?
+                </span>
+                <p className="text-slate-200">
+                  Severe road surface flash flooding (38.0cm water accumulation) blocking Road R17
+                  corridor between Bridge B02 and Memorial Way. Multiple vehicles stalled; primary
+                  emergency transit artery severed.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 space-y-1">
+                <span className="font-bold font-mono text-cyan-400 block uppercase tracking-wider text-[11px]">
+                  2. WHERE?
+                </span>
+                <p className="text-slate-200">
+                  Road R17 Corridor, South Operational Sector (Jaipur Digital Twin), WGS84: 26.9124°N, 75.7873°E.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 space-y-1">
+                <span className="font-bold font-mono text-cyan-400 block uppercase tracking-wider text-[11px]">
+                  3. WHY DOES AEGIS BELIEVE IT?
+                </span>
+                <p className="text-slate-200">
+                  Evidence fusion corroborated 4 independent multimodal signals within 180m and 11
+                  minutes: (1) citizen geotagged image, (2) citizen 911 distress voice transcript, (3)
+                  mobile keyframe, and (4) municipal IoT culvert sensor P02. Combined confidence: <strong>94%</strong>.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 space-y-1">
+                <span className="font-bold font-mono text-cyan-400 block uppercase tracking-wider text-[11px]">
+                  4. WHAT IS AFFECTED?
+                </span>
+                <p className="text-slate-200">
+                  Road R17 is structurally severed. Central Memorial Hospital emergency ingress is
+                  compromised (+9.0 min ambulance delay). Stormwater pumping station node P02 is at 94%
+                  capacity strain.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 space-y-1">
+                <span className="font-bold font-mono text-cyan-400 block uppercase tracking-wider text-[11px]">
+                  5. WHAT SHOULD WE DO?
+                </span>
+                <p className="text-slate-200">
+                  Non-mutating What-If simulation verified alternative corridor R14 bypass (7.1 min ETA vs
+                  18.5 min unmanaged). Response Planner synthesized 5 concrete actions: dispatch rescue
+                  pumps, divert traffic, alert hospital, notify citizens, and deploy drone recon.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 space-y-1">
+                <span className="font-bold font-mono text-cyan-400 block uppercase tracking-wider text-[11px]">
+                  6. WHAT DID WE DO?
+                </span>
+                <p className="text-slate-200">
+                  City Commander authorized response plan under strict RBAC policy. High-Water Rescue
+                  Unit PU-04 was dispatched; traffic signals diverted non-emergency traffic to Corridor R14.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 space-y-1">
+                <span className="font-bold font-mono text-emerald-400 block uppercase tracking-wider text-[11px]">
+                  7. DID IT WORK?
+                </span>
+                <p className="text-slate-200">
+                  Closed-loop autonomous drone recon verified residual flood level receded from 38.0cm to
+                  4.2cm. Road R17 verified open to traffic; incident transitioned to <strong>RESOLVED</strong>.
+                  Citizen portal confirms safe resolution with verified before/after proof.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
+              <span className="text-[11px] font-mono text-slate-400">
+                Idempotent Scenario: Repeatable at any time.
+              </span>
+              <button
+                onClick={() => toggleJudgeBriefing(false)}
+                className="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold font-mono text-xs transition-colors"
+              >
+                Close Briefing
               </button>
             </div>
           </div>

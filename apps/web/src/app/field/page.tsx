@@ -326,7 +326,7 @@ export default function FieldOperationsPage() {
   const isSOPComplete = sopList.length > 0 && completedSOPCount === sopList.length;
 
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-100 flex flex-col font-sans select-none">
+    <div className="min-h-screen bg-[#030712] text-slate-100 flex flex-col font-sans">
       {/* Navigation Header */}
       <header className="h-14 border-b border-surface-border bg-surface-base/95 backdrop-blur px-6 flex items-center justify-between shrink-0 z-30">
         <div className="flex items-center gap-4">
@@ -368,7 +368,7 @@ export default function FieldOperationsPage() {
       </header>
 
       {/* Main Workspace */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6 overflow-y-auto">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 pb-36 space-y-6">
         {/* Top Summary Metrics Banner */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3.5 rounded-xl border border-surface-border bg-surface-card/60 backdrop-blur-sm">
